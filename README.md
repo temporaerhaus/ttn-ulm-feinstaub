@@ -6,7 +6,9 @@ A small Arduino sketch to measure particulates in the air via the SDS011 sensor 
 1. Connect the SDS011 to the PINs configured in the sketch (PIN 8 and 9 are preconfigured)
 2. Connect the 5V and GND pins
 3. Fill in your TTN credentials
-4. Write the sketch to the arduino
+4. Make sure you have the SDS0011 and TheThingsNetwork library present in the Arduino library folder,
+   you can get the TTN library from the Arduino Library Manager or from github
+5. Write the sketch to the arduino
 
 ## Quick explanation what this does
 1. sleeps for a given amount of time.
@@ -21,7 +23,11 @@ GNU Affero General Public License v3 (AGPL-3.0)
 See LICENSE file
 
 ## Other code used
-Uses the SDS011 library by R. Zschiegner (rz@madavi.de)
-https://github.com/ricki-z/SDS011
+Uses:
 
+SDS011 library by R. Zschiegner (rz@madavi.de)
+https://github.com/ricki-z/SDS011
 We keep a local copy if this library in the libs/ subfolder. Makes building easier for new users.
+
+TheThingsNetwork library by Johan Stokking (johan@stokking.nl)
+https://github.com/TheThingsNetwork/arduino-node-lib

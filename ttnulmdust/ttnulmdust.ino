@@ -1,6 +1,3 @@
-#include "SDS011.h"
-#include <TheThingsNetwork.h>
-
 /*****************************************************
  * TTN Ulm particulate matter sensor
  *
@@ -17,6 +14,17 @@
  * 6) send them to the given TTN application
  *
 ******************************************************/
+#include "SDS011.h"
+#include <TheThingsNetwork.h>
+
+#define DEBUGRATE 9600
+#define LORA_RATE 57600
+
+#define loraSerial Serial1
+#define debugSerial Serial
+
+#include "sleep_32u4.h"
+#define PWR_DOWN 0
 
 // copy and paste these values from your TTN console application
 const char *devAddr = "";
@@ -24,17 +32,24 @@ const char *nwkSKey = "";
 const char *appSKey = "";
 
 // sleep time between fan spinup and sleep in minutes.
-const int sleep_duration = 60;
+//const int sleep_duration = 60;
+const int sleep_duration = 5;		// sleep for 5 minutes
+volatile uint16_t iWakeCntr = 0;
+
+// WDT ISR
+ISR(WDT_vect){
+	if(iWakeCntr > UINT16_MAX-1)
+		iWakeCntr = 0;		
+	else
+		iWakeCntr++;
+}
 
 // PIN configuration
 int PIN_TX = 8; // connect the SDS011 TX pin to this Arduino pin
 int PIN_RX = 9; // connect the SDS011 RX pin to this Arduino pin
 
-
-// TTN settings (not editing needed)
+// TTN settings (no editing needed)
 const ttn_fp_t freqPlan = TTN_FP_EU868;
-#define loraSerial Serial1
-#define debugSerial Serial
 TheThingsNetwork ttn(loraSerial, debugSerial, freqPlan);
 
 // paticulate matter variables (no editing needed)
@@ -44,27 +59,30 @@ float samples_p25[10];
 int error;
 SDS011 my_sds;
 
-
-
 void setup() {
-    loraSerial.begin(57600);
-    debugSerial.begin(9600);
+	debugSerial.begin(DEBUGRATE);
+    loraSerial.begin(LORA_RATE);    
 
     while (!debugSerial && millis() < 10000);
 
     // fine dust
     debugSerial.println("Started!");
-	my_sds.begin(8,9);
+	my_sds.begin(PIN_TX, PIN_RX);
+	
+	#if PWR_DOWN
+	// for debugging
+	pinMode(13, OUTPUT);
+	#endif
 
     ttn.personalize(devAddr, nwkSKey, appSKey);
     ttn.showStatus();
 }
 
-
-
 void loop() {
+	digitalWrite(13, HIGH);
+	
     // wake up the sensor
-    debugSerial.println("Waking up...");
+    debugSerial.println("Waking up SDS...");	
     my_sds.wakeup();
 
     // let the fan run for a minute to clean the fan
@@ -76,7 +94,7 @@ void loop() {
     // read pm25 and pm10 values from the sensor
     long delay2 = 1100;
     long samples = 10;
-    for (int i = 0; i <samples; i++) {
+    for (int i = 0; i < samples; i++) {
         error = my_sds.read(&p25,&p10);
         if (!error) {
 
@@ -111,15 +129,17 @@ void loop() {
     debugSerial.println("Sending data to TTN...");
     ttn.sendBytes(payload, sizeof(payload));
 
-
     // put sensor to sleep so save battery
-    debugSerial.println("Going to sleep...");
+    debugSerial.println("Sending SDS to sleep...");
     my_sds.sleep();
 
-    // sleep for a few mninutes to save energy
-    debugSerial.println("Sleeping for " + String(sleep_duration) + " minutes.");
-    delay((1000L * 60 * sleep_duration) - (delay1 + samples*delay2)); // substract wakup time to prevent heavy drift
-
+    // sleep for a few minutes to save energy
+    #if PWR_DOWN
+	//delay(5000);
+	enterSleepFor(sleep_duration);
+	#else
+	delay((1000L * 60 * sleep_duration) - (delay1 + samples*delay2)); // substract wakup time to prevent heavy drift
+	#endif
 }
 
 
