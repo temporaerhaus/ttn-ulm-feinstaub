@@ -23,10 +23,7 @@ GNU Affero General Public License v3 (AGPL-3.0)
 See LICENSE file
 
 ## Other code used
-Uses:
-
-SDS011 library by R. Zschiegner (rz@madavi.de)
-https://github.com/ricki-z/SDS011
+SDS011 library by R. Zschiegner (rz@madavi.de) https://github.com/ricki-z/SDS011
 We keep a local copy if this library in the libs/ subfolder. Makes building easier for new users.
 
 TheThingsNetwork library by Johan Stokking (johan@stokking.nl)

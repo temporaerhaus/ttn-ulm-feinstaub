@@ -2,6 +2,7 @@
 	Sleepfunctions for Arduino Leonardo (ATmega32u4)
 	!!! experimental !!!
 	sleep mode leads to shutdown of usb port, atm it wont wake up again.
+	New flash is only possible by reseting the board manually.
 */
 
 #define SLEEP_FACTOR 7
@@ -21,7 +22,7 @@ static bool setSleepTime(uint16_t iSleep){
 
 // deactivate functions to save energy while running the program
 // e.g. if you don't use i2c deactivate the TWI
-static void setupPowerMode(){
+void setupPowerMode(){
 	// prepare power down mode
 	ADCSRA &= ~(1<<7);		// disable ADCSRA
 	ACSR = 0b10000000;		// disable analog comperator
@@ -37,7 +38,7 @@ static void setupPowerMode(){
 	PRR1 = 0b00111000;		// disable Timer5, Timer4, Timer3
 	
 	// setup watchdog prescaler to 8.0s
-	WDTCSR |= 0b00011000;	
+	WDTCSR = 0b00011000;	
 	WDTCSR = 0b00100001;	
 }
 
@@ -46,7 +47,7 @@ static void prepareSleep(bool bSleep){
 	if(bSleep){
 		Serial.end();
 		Serial1.end();
-		setupPowerMode();
+		//setupPowerMode();
 		digitalWrite(13, LOW);
 		
 		WDTCSR |= (1<<WDIE);		// enable WDT

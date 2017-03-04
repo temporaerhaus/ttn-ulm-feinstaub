@@ -24,6 +24,7 @@
 #define debugSerial Serial
 
 #include "sleep_32u4.h"
+// set to 1 to use power down mode of µC, new flash needs manual reset
 #define PWR_DOWN 0
 
 // copy and paste these values from your TTN console application
@@ -72,6 +73,7 @@ void setup() {
 	#if PWR_DOWN
 	// for debugging
 	pinMode(13, OUTPUT);
+	setupPowerMode();
 	#endif
 
     ttn.personalize(devAddr, nwkSKey, appSKey);
