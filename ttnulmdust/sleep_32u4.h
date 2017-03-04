@@ -29,13 +29,13 @@ void setupPowerMode(){
 	SMCR |= (1<<SM1);			// setup sleep mode
 	
 	// disable digital input buffer in adc pins
-	DIDR0 = 0b11111111;		// disable ADC 0-7
-	DIDR1 = 0b00000011;		// disable AIN 0,1
-	DIDR2 = 0b11111111;		// disable ADC 8-15
+	//DIDR0 = 0b11111111;		// disable ADC 0-7
+	//DIDR1 = 0b00000011;		// disable AIN 0,1
+	//DIDR2 = 0b11111111;		// disable ADC 8-15
 	
 	// disable not needed functions
-	PRR0 = 0b10000001;		// disable TWI, Timer2, ADCSRA
-	PRR1 = 0b00111000;		// disable Timer5, Timer4, Timer3
+	//PRR0 = 0b10000001;		// disable TWI, Timer2, ADCSRA
+	//PRR1 = 0b00111000;		// disable Timer5, Timer4, Timer3
 	
 	// setup watchdog prescaler to 4.0s
 	WDTCSR = 0b00011000;	
