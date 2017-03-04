@@ -5,7 +5,7 @@
 	New flash is only possible by reseting the board manually.
 */
 
-#define SLEEP_FACTOR 7
+#define SLEEP_FACTOR 15
 
 static uint16_t iSleepTimeout = 0;
 extern volatile uint16_t iWakeCntr;
@@ -37,9 +37,9 @@ void setupPowerMode(){
 	PRR0 = 0b10000001;		// disable TWI, Timer2, ADCSRA
 	PRR1 = 0b00111000;		// disable Timer5, Timer4, Timer3
 	
-	// setup watchdog prescaler to 8.0s
+	// setup watchdog prescaler to 4.0s
 	WDTCSR = 0b00011000;	
-	WDTCSR = 0b00100001;	
+	WDTCSR = 0b00100000;	
 }
 
 // deactivate used functions before sleep, set outputs to inputs to save extra energy
