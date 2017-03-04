@@ -68,7 +68,7 @@ void setup() {
 
     // fine dust
     debugSerial.println("Started!");
-	my_sds.begin(PIN_TX, PIN_RX);
+	my_sds.begin(PIN_RX, PIN_TX);
 	
 	#if PWR_DOWN
 	// for debugging
