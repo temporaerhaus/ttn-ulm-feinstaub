@@ -15,7 +15,31 @@
  *
 ******************************************************/
 #include "SDS011.h"
+#include <DHT.h>
 #include <TheThingsNetwork.h>
+
+//*******************************
+// User variables
+//*******************************
+
+// copy and paste these values from your TTN console application
+const char *devAddr = "";
+const char *nwkSKey = "";
+const char *appSKey = "";
+
+// PIN configuration
+#define PIN_RX 8       // connect the SDS011 RX pin to this Arduino pin
+#define PIN_TX 9       // connect the SDS011 TX pin to this Arduino pin
+#define DHTPIN 10      // connect the DHT22 PIN to this Arduino PIN
+
+#define SLEEP_ON 1     // if the fan should go to sleep
+#define SLEEP_TIME  5  // sleep for x minutes between readings
+#define FAN_SPINUP 30  // how long should the fan 'clean' itself before measurements are taken (if SLEEP_ON = 1)
+#define PWR_DOWN 0     // set to 1 to use power down mode of µC, new flash needs manual reset
+
+//***************************************************
+// You don't need to change anyhting below this line
+//***************************************************
 
 #define DEBUGRATE 9600
 #define LORA_RATE 57600
@@ -23,37 +47,30 @@
 #define loraSerial Serial1
 #define debugSerial Serial
 
+// DHT22 settings
+#define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
+DHT dht(DHTPIN, DHTTYPE);
+
+// Power saving
 #include "sleep_32u4.h"
-// set to 1 to use power down mode of µC, new flash needs manual reset
-#define PWR_DOWN 0
-
-// copy and paste these values from your TTN console application
-const char *devAddr = "";
-const char *nwkSKey = "";
-const char *appSKey = "";
-
 // sleep time between fan spinup and sleep in minutes.
-//const int sleep_duration = 60;
-const int sleep_duration = 5;		// sleep for 5 minutes
 volatile uint16_t iWakeCntr = 0;
 
 // WDT ISR
-ISR(WDT_vect){
-	if(iWakeCntr > UINT16_MAX-1)
-		iWakeCntr = 0;		
-	else
-		iWakeCntr++;
+ISR(WDT_vect) {
+	if (iWakeCntr > UINT16_MAX-1) {
+		iWakeCntr = 0;
+    } else {
+        iWakeCntr++;
+    }
 }
 
-// PIN configuration
-int PIN_TX = 8; // connect the SDS011 TX pin to this Arduino pin
-int PIN_RX = 9; // connect the SDS011 RX pin to this Arduino pin
 
 // TTN settings (no editing needed)
 const ttn_fp_t freqPlan = TTN_FP_EU868;
 TheThingsNetwork ttn(loraSerial, debugSerial, freqPlan);
 
-// paticulate matter variables (no editing needed)
+// SDS011, paticulate matter variables (no editing needed)
 float p10,p25;
 float samples_p10[10];
 float samples_p25[10];
@@ -69,7 +86,10 @@ void setup() {
     // fine dust
     debugSerial.println("Started!");
 	my_sds.begin(PIN_RX, PIN_TX);
-	
+
+    // start DHT22 reading
+    dht.begin();
+
 	#if PWR_DOWN
 	// for debugging
 	pinMode(13, OUTPUT);
@@ -82,16 +102,47 @@ void setup() {
 
 void loop() {
 	digitalWrite(13, HIGH);
-	
+
+    // **************************
+    // Wake up and fan speed up
+    // **************************
     // wake up the sensor
+
+    #if SLEEP_ON
     debugSerial.println("Waking up SDS...");	
     my_sds.wakeup();
 
     // let the fan run for a minute to clean the fan
     debugSerial.println("Letting fan speed up and clean itself for a minute...");
-    long delay1 = 1000L * 60;
+    long delay1 = 1000L * FAN_SPINUP;
     delay(delay1);
+    #endif
 
+
+    // **********************
+    // DHT22
+    // **********************
+    // Reading temperature or humidity takes about 250 milliseconds!
+    // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+    float h = dht.readHumidity();
+    debugSerial.println("Humidity: " + String(h));
+    // Read temperature as Celsius (the default)
+    float t = dht.readTemperature();
+    debugSerial.println("Temperature: " + String(t));
+
+    // Check if any reads failed and exit early (to try again).
+    if (isnan(h) || isnan(t)) {
+        debugSerial.println("Failed to read from DHT sensor!");
+    }
+
+    int16_t hint = round(h * 100);
+    int16_t tint = round(t * 100);
+
+
+
+    // **********************
+    // SDS011
+    // **********************
     debugSerial.println("Reading 10 samples of sensor data (some may fail)...");
     // read pm25 and pm10 values from the sensor
     long delay2 = 1100;
@@ -121,16 +172,33 @@ void loop() {
     debugSerial.println("P2.5 median: "+String(p25median));
     debugSerial.println("P10  median: "+String(p10median));
 
+
+    // **********************
+    // TTN
+    // **********************
     // Encode int as bytes
-    byte payload[4];
+    byte payload[8];
+    // sds011
     payload[0] = highByte(p10int);
     payload[1] = lowByte(p10int);
     payload[2] = highByte(p25int);
     payload[3] = lowByte(p25int);
+    // dht22
+    payload[4] = highByte(hint); // humidity
+    payload[5] = lowByte(hint);
+    payload[6] = highByte(tint); // temperature
+    payload[7] = lowByte(tint);
+
     // send via TTN
     debugSerial.println("Sending data to TTN...");
     ttn.sendBytes(payload, sizeof(payload));
 
+
+
+    // **********************
+    // Sleep
+    // **********************
+    #if SLEEP_ON
     // put sensor to sleep so save battery
     debugSerial.println("Sending SDS to sleep...");
     my_sds.sleep();
@@ -138,10 +206,12 @@ void loop() {
     // sleep for a few minutes to save energy
     #if PWR_DOWN
 	//delay(5000);
-	enterSleepFor(sleep_duration);
+	enterSleepFor(SLEEP_TIME);
 	#else
-	delay((1000L * 60 * sleep_duration) - (delay1 + samples*delay2)); // substract wakup time to prevent heavy drift
-	#endif
+	delay((1000L * 60 * SLEEP_TIME) - (delay1 + samples*delay2)); // substract wakup time to prevent heavy drift
+    #endif
+
+    #endif
 }
 
 

@@ -18,6 +18,15 @@ A small Arduino sketch to measure particulates in the air via the SDS011 sensor 
 5. encodes the values into bytes
 6. send them to the given TTN app
 
+## Arduino Libraries
+
+Install the following libraries through the Arduino Library Manager:
+
+* TheThingsNetwork
+* Adafruit Unified Sensor (scroll wayyy down)
+* DHT sensor library
+
+
 ## License
 GNU Affero General Public License v3 (AGPL-3.0)
 See LICENSE file
