@@ -23,9 +23,8 @@
 //*******************************
 
 // copy and paste these values from your TTN console application
-const char *devAddr = "";
-const char *nwkSKey = "";
-const char *appSKey = "";
+const char *appEui = "";
+const char *appKey = "";
 
 // PIN configuration
 #define PIN_RX 8       // connect the SDS011 RX pin to this Arduino pin
@@ -96,8 +95,8 @@ void setup() {
 	setupPowerMode();
 	#endif
 
-    ttn.personalize(devAddr, nwkSKey, appSKey);
     ttn.showStatus();
+    ttn.join(appEui, appKey); // OTAA
 }
 
 void loop() {
