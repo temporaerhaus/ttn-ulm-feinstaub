@@ -222,7 +222,6 @@ void loop() {
 // calculate the median
 float median(float samples[], int m) {
     float sorted[m];
-    float temp=0.0;
 
     for(int i=0;i<m;i++){
         sorted[i]=samples[i];
