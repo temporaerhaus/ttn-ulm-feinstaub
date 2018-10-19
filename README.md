@@ -10,11 +10,12 @@ A Arduino sketch to measure particulates in the air via the SDS011 sensor and se
 ## Usage
 1. Connect the SDS011 to the PINs configured in the sketch (PIN 8 and 9 are preconfigured)
 2. Connect the 5V and GND pins
-3. Connect the DHT sensor to PIN 10, 3.3v and GND.
+3. Connect the DHT sensor to PIN 10, 3.3v and GND or connect the BME280 sensor to PIN SCL, SDA, 3.3V and GND.
 4. Fill in your TTN credentials
-5. Make sure you have the TheThingsNetwork, DHT library installed,
-   you can get them from the Arduino Library Manager(see below).
-6. Write the sketch to the arduino
+5. If you are using a BME280 sensor, uncomment the "#define BME280" line in the sketch
+6. Make sure you have the TheThingsNetwork, DHT library and BME280 library installed,
+   you can get them from the Arduino Library Manager (see below)
+7. Write the sketch to the The Things Uno
 
 ## Quick explanation what this does
 1. sleeps for a given amount of time.
@@ -32,6 +33,7 @@ Install the following libraries through the Arduino Library Manager:
 * TheThingsNetwork
 * Adafruit Unified Sensor (scroll wayyy down)
 * DHT sensor library
+* Adafruit BME280 library
 
 
 ## License

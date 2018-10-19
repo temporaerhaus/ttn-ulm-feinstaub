@@ -28,6 +28,7 @@ ist kleiner und billiger und allgemein unsere Empfehlung.
 
 * SDS011 - [Bestellen](http://de.aliexpress.com/wholesale?site=deu&SortType=price_asc&shipCountry=de&SearchText=sds011&CatId=523)
 * DHT22 - [Bestellen](http://de.aliexpress.com/wholesale?site=deu&SortType=price_asc&shipCountry=de&SearchText=dht22&CatId=523)
+* BME280 (statt DHT22) - [Bestellen](de.aliexpress.com/wholesale?site=deu&SortType=price_asc&shipCountry=de&SearchText=bme280&CatId=523)
 * LoRA Node (nur eine nötig)
  * The Things UNO - [Bestellen](https://shop.thethingsnetwork.com/index.php/product/the-things-uno/)
  * Adafruit Feather - [Bestellen](http://www.exp-tech.de/adafruit-feather-m0-with-rfm95-lora-radio-900mhz) (nicht wundern, 900Mhz ist korrekt)
@@ -56,13 +57,14 @@ der Arduino IDE über den Arduino Library Manager hinzufügen:
 * TheThingsNetwork
 * Adafruit Unified Sensor (weit nach unten scrollen)
 * DHT sensor library
+* Adafruit BME280 library
 
 
 ## Zusammenbauen
 
-#### The Things UNO
+### The Things UNO
 
-**Feinstaubsensor SDS011**
+#### Feinstaubsensor SDS011
 
 Am Feinstaubsensor werden von links nach rechts (wenn der Sensor flach
 auf dem Tisch liegt, Lüfter oben) folgende Pins verbunden:
@@ -77,7 +79,15 @@ auf dem Tisch liegt, Lüfter oben) folgende Pins verbunden:
 
 (Wer sich auskennt dann die Belegung der PINs auch im Sketch ändern.)
 
-**DHT22 Temperatur- und Feuchtigkeitssensor**
+#### Temperatur- und Feuchtigkeitssensor
+
+Die Software unterstützt mit dem DHT22 und dem BME280 zwei unterschiedliche
+Temperatur- und Luftfeuchtigkeitssensoren. In der Software ist standardmäßig
+der DHT22 aktiviert. Durch einkommentieren von "#define BME280" unterstützt
+die Software den BME280. Der Anschluß der beiden Sensoren wird im folgenden
+beschrieben.
+
+##### DHT22 Temperatur- und Feuchtigkeitssensor
 
 Am Sensor werden vorne (das Gitter) von links nach rechts folgende Pins
 verbunden:
@@ -93,13 +103,24 @@ dünnen Beinchen.
 
 (Auch hier kann man die PIN-Belegung im Sketch anpassen, falls nötig.)
 
+##### BME280 (statt DHT22) Temperatur- und Feuchtigkeitssensor
 
-#### Adafruit Feather
+Am BME280 sind die Pins bereits mit ihren I2C Namen markiert. Sie werden
+eins zu eins mit den Pins am The Things Uno verbunden:
+
+* VIN: 3.3V am The Things Uno
+* GND: GND am The Things Uno (egal welcher GND)
+* SCL: SCL am The Things Uno
+* SDA: SDA am The Things Uno
+
+
+
+### Adafruit Feather
 
 Anleitung hierzu folgt bald.
 
 
-#### Zusammenstecken
+### Zusammenstecken
 
 Wie man die Einzelteile in das Rohr einsetzt wird sehr gut direkt
 bei [luftdaten.info erklärt](http://luftdaten.info/feinstaubsensor-bauen/#komponenten-zusammenbau)
@@ -116,7 +137,7 @@ fügen wir dich natürlich gerne hinzu. Danach kannst du in dieser App
 ein Device erstellen, um deinen Feinstaubsensor am Netzwerk anzumelden
 und loszulegen.
 
-**Schritt für Schritt:**
+### Schritt für Schritt:
 
 1. [Anmelden bei The Things Network](https://www.thethingsnetwork.org/).
 Rechts oben auf *Sign up* klicken und registrieren.
