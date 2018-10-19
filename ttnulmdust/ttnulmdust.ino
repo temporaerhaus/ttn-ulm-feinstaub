@@ -15,7 +15,19 @@
  *
 ******************************************************/
 #include "SDS011.h"
-#include <DHT.h>
+
+// uncomment to use BME280 weather sensor
+//#define BME280
+
+#ifdef BME280
+    // default I2C address for the BME280 is 0x77
+    // if your chinese import does not work, try to use 0x76 instead
+    #define BME_ADDRESS 0x77
+    #include <Adafruit_BME280.h>
+#else
+    #include <DHT.h>
+#endif
+
 #include <TheThingsNetwork.h>
 
 //*******************************
@@ -26,10 +38,20 @@
 const char *appEui = "";
 const char *appKey = "";
 
-// PIN configuration
-#define PIN_RX 8       // connect the SDS011 RX pin to this Arduino pin
-#define PIN_TX 9       // connect the SDS011 TX pin to this Arduino pin
-#define DHTPIN 10      // connect the DHT22 PIN to this Arduino PIN
+// PIN configuration for the SDS011 dust sensor
+#define PIN_RX 8       // connect the SDS011 RX pin to this The Things Uno pin
+#define PIN_TX 9       // connect the SDS011 TX pin to this The Things Uno pin
+
+#ifdef BME280
+    Adafruit_BME280 weatherSensor; // I2C - connect SCL to SCL and SDA to SDA
+#else
+    // DHT configuration
+    #define DHTPIN 10      // connect the DHT22 PIN to this The Things Uno PIN
+
+    // DHT22 settings
+    #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
+    DHT weatherSensor(DHTPIN, DHTTYPE);
+#endif
 
 #define SLEEP_ON 1     // if the fan should go to sleep
 #define SLEEP_TIME  5  // sleep for x minutes between readings
@@ -46,24 +68,24 @@ const char *appKey = "";
 #define loraSerial Serial1
 #define debugSerial Serial
 
-// DHT22 settings
-#define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
-DHT dht(DHTPIN, DHTTYPE);
-
 // Power saving
 #include "sleep_32u4.h"
+
 // sleep time between fan spinup and sleep in minutes.
 volatile uint16_t iWakeCntr = 0;
 
 // WDT ISR
-ISR(WDT_vect) {
-	if (iWakeCntr > UINT16_MAX-1) {
+ISR(WDT_vect) 
+{
+	if (iWakeCntr > UINT16_MAX-1) 
+    {
 		iWakeCntr = 0;
-    } else {
+    } 
+    else 
+    {
         iWakeCntr++;
     }
 }
-
 
 // TTN settings (no editing needed)
 const ttn_fp_t freqPlan = TTN_FP_EU868;
@@ -76,7 +98,8 @@ float samples_p25[10];
 int error;
 SDS011 my_sds;
 
-void setup() {
+void setup()
+{
 	debugSerial.begin(DEBUGRATE);
     loraSerial.begin(LORA_RATE);    
 
@@ -86,8 +109,16 @@ void setup() {
     debugSerial.println("Started!");
 	my_sds.begin(PIN_RX, PIN_TX);
 
-    // start DHT22 reading
-    dht.begin();
+    // start the weather sensor
+    #ifdef BME280
+        bool status = weatherSensor.begin(BME_ADDRESS);  
+        if (!status) {
+            Serial.println("Could not find a valid BME280 sensor, check wiring!");
+            while (1);
+        }
+    #else
+        weatherSensor.begin();
+    #endif
 
 	#if PWR_DOWN
 	// for debugging
@@ -119,45 +150,53 @@ void loop() {
 
 
     // **********************
-    // DHT22
+    // Weather Sensor
     // **********************
     // Reading temperature or humidity takes about 250 milliseconds!
     // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-    float h = dht.readHumidity();
+    float h = weatherSensor.readHumidity();
     debugSerial.println("Humidity: " + String(h));
     // Read temperature as Celsius (the default)
-    float t = dht.readTemperature();
+    float t = weatherSensor.readTemperature();
     debugSerial.println("Temperature: " + String(t));
 
-    // Check if any reads failed and exit early (to try again).
+    // // Check if any reads failed and exit early (to try again).
     if (isnan(h) || isnan(t)) {
-        debugSerial.println("Failed to read from DHT sensor!");
+        debugSerial.println("Failed to read from weather sensor!");
     }
 
+    // ******************************************************************
+    // Read sensor data (temperature / humidity)
+    // ******************************************************************
     int16_t hint = round(h * 100);
     int16_t tint = round(t * 100);
-
-
 
     // **********************
     // SDS011
     // **********************
     debugSerial.println("Reading 10 samples of sensor data (some may fail)...");
+
     // read pm25 and pm10 values from the sensor
     long delay2 = 1100;
     long samples = 10;
-    for (int i = 0; i < samples; i++) {
-        error = my_sds.read(&p25,&p10);
-        if (!error) {
+
+    for (int i = 0; i < samples; i++) 
+    {
+        error = my_sds.read(&p25, &p10);
+        if (!error) 
+        {
 
             samples_p25[i] = p25;
             samples_p10[i] = p10;
 
-            debugSerial.println("P2.5: "+String(p25));
-            debugSerial.println("P10:  "+String(p10));
-        } else {
+            debugSerial.println("P2.5: " + String(p25));
+            debugSerial.println("P10:  " + String(p10));
+        } 
+        else 
+        {
             debugSerial.println("error reading data!");
         }
+
         delay(delay2);
     }
 
@@ -168,8 +207,8 @@ void loop() {
     int16_t p10int = round(p10median * 100);
     int16_t p25int = round(p25median * 100);
 
-    debugSerial.println("P2.5 median: "+String(p25median));
-    debugSerial.println("P10  median: "+String(p10median));
+    debugSerial.println("P2.5 median: " + String(p25median));
+    debugSerial.println("P10  median: " + String(p10median));
 
 
     // **********************
@@ -177,12 +216,14 @@ void loop() {
     // **********************
     // Encode int as bytes
     byte payload[8];
+
     // sds011
     payload[0] = highByte(p10int);
     payload[1] = lowByte(p10int);
     payload[2] = highByte(p25int);
     payload[3] = lowByte(p25int);
-    // dht22
+
+    // sensor (temperature / humidity)
     payload[4] = highByte(hint); // humidity
     payload[5] = lowByte(hint);
     payload[6] = highByte(tint); // temperature
@@ -191,8 +232,6 @@ void loop() {
     // send via TTN
     debugSerial.println("Sending data to TTN...");
     ttn.sendBytes(payload, sizeof(payload));
-
-
 
     // **********************
     // Sleep
@@ -207,48 +246,58 @@ void loop() {
 	//delay(5000);
 	enterSleepFor(SLEEP_TIME);
 	#else
-	delay((1000L * 60 * SLEEP_TIME) - (delay1 + samples*delay2)); // substract wakup time to prevent heavy drift
+	delay((1000L * 60 * SLEEP_TIME) - (delay1 + samples * delay2)); // substract wakup time to prevent heavy drift
     #endif
 
     #endif
 }
-
-
 
 //*****************************
 // Helper functions
 //*****************************
 
 // calculate the median
-float median(float samples[], int m) {
+float median(float samples[], int m)
+ {
     float sorted[m];
 
-    for(int i=0;i<m;i++){
-        sorted[i]=samples[i];
+    for(int i = 0; i < m; i++)
+    {
+        sorted[i] = samples[i];
     }
-    bubbleSort(sorted,m);
-    if (bitRead(m,0)==1) {
-        return sorted[m/2];
-    } else {
-        return (sorted[(m/2)-1]+sorted[m/2])/2;
+
+    bubbleSort(sorted, m);
+
+    if (bitRead(m, 0) == 1)
+    {
+        return sorted[m / 2];
+    } 
+    else
+    {
+        return (sorted[(m / 2) - 1] + sorted[m / 2]) / 2;
     }
 }
 
 // sort array with bubble sort (needed for the median)
 void bubbleSort(float A[], int len) {
     unsigned long newn;
-    unsigned long n=len;
-    float temp=0.0;
+    unsigned long n = len;
+    float temp = 0.0;
+
     do {
-        newn=1;
-        for(int p=1;p<len;p++){
-            if(A[p-1]>A[p]){
-                temp=A[p];
-                A[p]=A[p-1];
-                A[p-1]=temp;
-                newn=p;
+        newn = 1;
+        
+        for(int p = 1; p < len; p++)
+        {
+            if (A[p-1] > A[p]) 
+            {
+                temp = A[p];
+                A[p] = A[p-1];
+                A[p-1] = temp;
+                newn = p;
             }
         }
-        n=newn;
-    } while(n>1);
+
+        n = newn;
+    } while (n > 1);
 }
