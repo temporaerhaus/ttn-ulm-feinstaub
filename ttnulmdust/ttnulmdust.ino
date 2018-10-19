@@ -17,7 +17,7 @@
 #include "SDS011.h"
 
 // uncomment to use BME280 weather sensor
-//#define BME280
+// #define BME280
 
 #ifdef BME280
     // default I2C address for the BME280 is 0x77
@@ -116,6 +116,13 @@ void setup()
             Serial.println("Could not find a valid BME280 sensor, check wiring!");
             while (1);
         }
+
+        // set BME280 weather station mode (save some energy)
+        weatherSensor.setSampling(Adafruit_BME280::MODE_FORCED,
+                            Adafruit_BME280::SAMPLING_X1, // temperature
+                            Adafruit_BME280::SAMPLING_X1, // pressure
+                            Adafruit_BME280::SAMPLING_X1, // humidity
+                            Adafruit_BME280::FILTER_OFF   );
     #else
         weatherSensor.begin();
     #endif
@@ -185,7 +192,6 @@ void loop() {
         error = my_sds.read(&p25, &p10);
         if (!error) 
         {
-
             samples_p25[i] = p25;
             samples_p10[i] = p10;
 
@@ -209,7 +215,6 @@ void loop() {
 
     debugSerial.println("P2.5 median: " + String(p25median));
     debugSerial.println("P10  median: " + String(p10median));
-
 
     // **********************
     // TTN
