@@ -1,0 +1,47 @@
+/*****************************************************
+ * TTN Ulm particulate matter sensor
+ *
+ * To configure the sensor, enter your The Things Network
+ * keys in "*appEui" and "*appKey" (you can copy the 
+ * values directly from the TTN Console).
+ * 
+ * To use a BME280 sensor instead of the DHT22, just
+ * uncomment the "#define BME280_SENSOR" line. In case
+ * that the BME280 is not found, you can configure the
+ * BME_ADDRESS below.
+ *
+******************************************************/
+
+// copy and paste these values from your TTN console application
+const char *appEui = "";
+const char *appKey = "";
+
+// PIN configuration for the SDS011 dust sensor
+#define PIN_RX 8       // connect the SDS011 RX pin to this The Things Uno pin
+#define PIN_TX 9       // connect the SDS011 TX pin to this The Things Uno pin
+
+// DHT configuration
+#define DHTPIN 10      // connect the DHT22 PIN to this The Things Uno PIN
+#define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
+
+// uncomment to use BME280 weather sensor
+// #define BME280_SENSOR
+
+// default I2C address for the BME280 is 0x77
+// if your chinese import does not work, try to use 0x76 instead
+#define BME_ADDRESS 0x77
+
+// timeouts for power saving and measurements
+#define SLEEP_ON 1     // if the fan should go to sleep
+#define SLEEP_TIME  5  // sleep for x minutes between readings
+#define FAN_SPINUP 30  // how long should the fan 'clean' itself before measurements are taken (if SLEEP_ON = 1)
+#define PWR_DOWN 0     // set to 1 to use power down mode of µC, new flash needs manual reset
+
+//***************************************************
+// You don't need to change anyhting below this line
+//***************************************************
+#define DEBUGRATE 9600
+#define LORA_RATE 57600
+
+#define loraSerial Serial1
+#define debugSerial Serial
