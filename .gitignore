@@ -6,3 +6,5 @@ bin/*/
 *~
 build-tmp/
 Makefile
+ttnulmdust/.vscode/*
+ttnulmdust/configuration.h
