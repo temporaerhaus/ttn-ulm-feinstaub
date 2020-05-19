@@ -164,14 +164,21 @@ abgeschlossen ist.
 Bevor der Arduino-Sketch auf den Arduino geflasht wird,
 müssen noch die TTN Daten deines Devices (siehe vorigen Schritt)
 hinzugefügt werden.
+Die Konfiguration befindet sich in der "configuration.h" Datei. Sollte
+die Datei noch nicht existieren, so kopiert die Standard Konfiguration
+"configuration.h.default" nach "configuration.h".
 
-Öffne die Datei ttnulmdust.ino und ersetzte dort die zwei Zeilen
+Öffne die Datei "configuation.h" und ersetzte dort die zwei Zeilen
 ```
     const char *devAddr = "";
     const char *appSKey = "";
 ```
 mit den zwei Zeilen, die du am unteren Ende der Device Seite bei TTN
-siehst.
+siehst ("Example Code").
+
+Solltest du einen BME280 Sensor verwenden, dann kommentiere bitte die
+Zeile "#define BME280_SENSOR" ein. Der Code wird dann mit der
+Unterstützug für den BME280 gebaut.
 
 Danach kannst du wie gewohnt über die Arduino IDE den Flashvorgang starten.
 

@@ -4,6 +4,11 @@
  * Reads data from a SDS011 sensor and send the data
  * to the TTN network via LoRaWAN.
  *
+ * To configure your particulate matter sensor, copy
+ * the configuration.h.default file to configuration.h
+ * and enter the correct values for your sensor (e.g.
+ * the keys for the The Things Network).
+ * 
  * Works like this:
  * 1) sleeps for a given amount of time.
  * 2) spins up the fan for a minute to clean the fan
@@ -15,61 +20,20 @@
  *
 ******************************************************/
 #include "SDS011.h"
-
-// uncomment to use BME280 weather sensor
-// #define BME280_SENSOR
-
-#ifdef BME280_SENSOR
-    // default I2C address for the BME280 is 0x77
-    // if your chinese import does not work, try to use 0x76 instead
-    #define BME_ADDRESS 0x76 
-
-    #include "BME280_Sensor.h"
-#else
-    // DHT configuration
-    #define DHTPIN 10      // connect the DHT22 PIN to this The Things Uno PIN
-    #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
-
-    #include <DHT_Sensor.h>
-#endif
-
+#include "configuration.h"
 #include <TheThingsNetwork.h>
+#include "sleep_32u4.h"
 
-//*******************************
-// User variables
-//*******************************
-
-// copy and paste these values from your TTN console application
-const char *appEui = "";
-const char *appKey = "";
-
-// PIN configuration for the SDS011 dust sensor
-#define PIN_RX 8       // connect the SDS011 RX pin to this The Things Uno pin
-#define PIN_TX 9       // connect the SDS011 TX pin to this The Things Uno pin
-
-#define SLEEP_ON 1     // if the fan should go to sleep
-#define SLEEP_TIME  5  // sleep for x minutes between readings
-#define FAN_SPINUP 30  // how long should the fan 'clean' itself before measurements are taken (if SLEEP_ON = 1)
-#define PWR_DOWN 0     // set to 1 to use power down mode of µC, new flash needs manual reset
-
-//***************************************************
-// You don't need to change anyhting below this line
-//***************************************************
-
-#define DEBUGRATE 9600
-#define LORA_RATE 57600
-
-#define loraSerial Serial1
-#define debugSerial Serial
-
+// include and create an instance of the weather sensor
 #ifdef BME280_SENSOR
+    #include "BME280_Sensor.h"
+
     BME280_Sensor weatherSensor(debugSerial, BME_ADDRESS); // I2C - connect SCL to SCL and SDA to SDA
 #else
+    #include <DHT_Sensor.h>
+
     DHT_Sensor weatherSensor(debugSerial, DHTPIN, DHTTYPE);
 #endif
-
-// Power saving
-#include "sleep_32u4.h"
 
 // sleep time between fan spinup and sleep in minutes.
 volatile uint16_t iWakeCntr = 0;

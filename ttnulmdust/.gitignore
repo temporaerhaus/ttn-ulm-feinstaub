@@ -1,3 +1,5 @@
 .pioenvs
 .piolibdeps
 .vscode
+.vscode/*
+configuration.h
