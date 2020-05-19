@@ -17,15 +17,20 @@
 #include "SDS011.h"
 
 // uncomment to use BME280 weather sensor
-// #define BME280
+// #define BME280_SENSOR
 
-#ifdef BME280
+#ifdef BME280_SENSOR
     // default I2C address for the BME280 is 0x77
     // if your chinese import does not work, try to use 0x76 instead
-    #define BME_ADDRESS 0x77
-    #include <Adafruit_BME280.h>
+    #define BME_ADDRESS 0x76 
+
+    #include "BME280_Sensor.h"
 #else
-    #include <DHT.h>
+    // DHT configuration
+    #define DHTPIN 10      // connect the DHT22 PIN to this The Things Uno PIN
+    #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
+
+    #include <DHT_Sensor.h>
 #endif
 
 #include <TheThingsNetwork.h>
@@ -42,17 +47,6 @@ const char *appKey = "";
 #define PIN_RX 8       // connect the SDS011 RX pin to this The Things Uno pin
 #define PIN_TX 9       // connect the SDS011 TX pin to this The Things Uno pin
 
-#ifdef BME280
-    Adafruit_BME280 weatherSensor; // I2C - connect SCL to SCL and SDA to SDA
-#else
-    // DHT configuration
-    #define DHTPIN 10      // connect the DHT22 PIN to this The Things Uno PIN
-
-    // DHT22 settings
-    #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
-    DHT weatherSensor(DHTPIN, DHTTYPE);
-#endif
-
 #define SLEEP_ON 1     // if the fan should go to sleep
 #define SLEEP_TIME  5  // sleep for x minutes between readings
 #define FAN_SPINUP 30  // how long should the fan 'clean' itself before measurements are taken (if SLEEP_ON = 1)
@@ -67,6 +61,12 @@ const char *appKey = "";
 
 #define loraSerial Serial1
 #define debugSerial Serial
+
+#ifdef BME280_SENSOR
+    BME280_Sensor weatherSensor(debugSerial, BME_ADDRESS); // I2C - connect SCL to SCL and SDA to SDA
+#else
+    DHT_Sensor weatherSensor(debugSerial, DHTPIN, DHTTYPE);
+#endif
 
 // Power saving
 #include "sleep_32u4.h"
@@ -92,7 +92,7 @@ const ttn_fp_t freqPlan = TTN_FP_EU868;
 TheThingsNetwork ttn(loraSerial, debugSerial, freqPlan);
 
 // SDS011, paticulate matter variables (no editing needed)
-float p10,p25;
+float p10, p25;
 float samples_p10[10];
 float samples_p25[10];
 int error;
@@ -106,26 +106,11 @@ void setup()
     while (!debugSerial && millis() < 10000);
 
     // fine dust
-    debugSerial.println("Started!");
+    debugSerial.println(F("Started!"));
 	my_sds.begin(PIN_RX, PIN_TX);
 
     // start the weather sensor
-    #ifdef BME280
-        bool status = weatherSensor.begin(BME_ADDRESS);  
-        if (!status) {
-            Serial.println("Could not find a valid BME280 sensor, check wiring!");
-            while (1);
-        }
-
-        // set BME280 weather station mode (save some energy)
-        weatherSensor.setSampling(Adafruit_BME280::MODE_FORCED,
-                            Adafruit_BME280::SAMPLING_X1, // temperature
-                            Adafruit_BME280::SAMPLING_X1, // pressure
-                            Adafruit_BME280::SAMPLING_X1, // humidity
-                            Adafruit_BME280::FILTER_OFF   );
-    #else
-        weatherSensor.begin();
-    #endif
+    weatherSensor.setup();
 
 	#if PWR_DOWN
 	// for debugging
@@ -144,44 +129,26 @@ void loop() {
     // Wake up and fan speed up
     // **************************
     // wake up the sensor
-
     #if SLEEP_ON
-    debugSerial.println("Waking up SDS...");	
+    debugSerial.println(F("Waking up SDS..."));	
     my_sds.wakeup();
 
     // let the fan run for a minute to clean the fan
-    debugSerial.println("Letting fan speed up and clean itself for a minute...");
+    debugSerial.println(F("Letting fan speed up and clean itself for a minute..."));
     long delay1 = 1000L * FAN_SPINUP;
     delay(delay1);
     #endif
 
-
-    // **********************
-    // Weather Sensor
-    // **********************
-    // Reading temperature or humidity takes about 250 milliseconds!
-    // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-    float h = weatherSensor.readHumidity();
-    debugSerial.println("Humidity: " + String(h));
-    // Read temperature as Celsius (the default)
-    float t = weatherSensor.readTemperature();
-    debugSerial.println("Temperature: " + String(t));
-
-    // // Check if any reads failed and exit early (to try again).
-    if (isnan(h) || isnan(t)) {
-        debugSerial.println("Failed to read from weather sensor!");
-    }
-
     // ******************************************************************
-    // Read sensor data (temperature / humidity)
+    // Read weather sensor data (temperature / humidity)
     // ******************************************************************
-    int16_t hint = round(h * 100);
-    int16_t tint = round(t * 100);
+    int16_t hint = weatherSensor.readHumidity();
+    int16_t tint = weatherSensor.readTemperature();
 
     // **********************
     // SDS011
     // **********************
-    debugSerial.println("Reading 10 samples of sensor data (some may fail)...");
+    debugSerial.println(F("Reading 10 samples of sensor data (some may fail)..."));
 
     // read pm25 and pm10 values from the sensor
     long delay2 = 1100;
@@ -200,7 +167,7 @@ void loop() {
         } 
         else 
         {
-            debugSerial.println("error reading data!");
+            debugSerial.println(F("error reading data!"));
         }
 
         delay(delay2);
@@ -213,8 +180,11 @@ void loop() {
     int16_t p10int = round(p10median * 100);
     int16_t p25int = round(p25median * 100);
 
-    debugSerial.println("P2.5 median: " + String(p25median));
-    debugSerial.println("P10  median: " + String(p10median));
+    // show the median on the debug console
+    debugSerial.print(F("P2.5 median: "));
+    debugSerial.println(String(p25median));
+    debugSerial.print(F("P10  median: "));
+    debugSerial.println(String(p10median));
 
     // **********************
     // TTN
@@ -235,7 +205,7 @@ void loop() {
     payload[7] = lowByte(tint);
 
     // send via TTN
-    debugSerial.println("Sending data to TTN...");
+    debugSerial.println(F("Sending data to TTN..."));
     ttn.sendBytes(payload, sizeof(payload));
 
     // **********************
@@ -243,7 +213,7 @@ void loop() {
     // **********************
     #if SLEEP_ON
     // put sensor to sleep so save battery
-    debugSerial.println("Sending SDS to sleep...");
+    debugSerial.println(F("Sending SDS to sleep..."));
     my_sds.sleep();
 
     // sleep for a few minutes to save energy
@@ -273,13 +243,15 @@ float median(float samples[], int m)
 
     bubbleSort(sorted, m);
 
-    if (bitRead(m, 0) == 1)
+    if ((m & 0x01) == 0)
     {
-        return sorted[m / 2];
+        // even number of elements
+        return (sorted[(m / 2) - 1] + sorted[m / 2]) / 2;        
     } 
     else
     {
-        return (sorted[(m / 2) - 1] + sorted[m / 2]) / 2;
+        // odd number of elements
+        return sorted[m / 2];
     }
 }
 
@@ -294,11 +266,11 @@ void bubbleSort(float A[], int len) {
         
         for(int p = 1; p < len; p++)
         {
-            if (A[p-1] > A[p]) 
+            if (A[p - 1] > A[p]) 
             {
                 temp = A[p];
-                A[p] = A[p-1];
-                A[p-1] = temp;
+                A[p] = A[p - 1];
+                A[p - 1] = temp;
                 newn = p;
             }
         }
