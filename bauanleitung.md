@@ -22,16 +22,19 @@ im Channel #feinstaub.
 
 ## Benötigte Hardware
 
-Neben den Sensoren hast du die Wahl zwischen zwei Arduinos.
-Der The Things UNO ist etwas größer und teurer; der Adafruit
-ist kleiner und billiger und allgemein unsere Empfehlung.
+Neben den Sensoren hast du die Wahl zwischen ~zwei Arduinos~ mehreren Boards.
+Der The Things UNO wird mittlerweile offenbar nicht mehr vertrieben. Der Adafruit
+war zum Zeitpunkt des ersten Aufschriebs dieses Dokuments unsere Empfehlung. Mittlerweile
+gibt es auf den üblichen Versandportalen auch viele weitere günstige Boards mit LoRa 
+(868 MHz!) z.B. auf Basis des ESP32.
 
 * SDS011 - [Bestellen](http://de.aliexpress.com/wholesale?site=deu&SortType=price_asc&shipCountry=de&SearchText=sds011&CatId=523)
 * DHT22 - [Bestellen](http://de.aliexpress.com/wholesale?site=deu&SortType=price_asc&shipCountry=de&SearchText=dht22&CatId=523)
-* BME280 (statt DHT22) - [Bestellen](de.aliexpress.com/wholesale?site=deu&SortType=price_asc&shipCountry=de&SearchText=bme280&CatId=523)
+* BME280 (statt DHT22) - [Bestellen](http://de.aliexpress.com/wholesale?site=deu&SortType=price_asc&shipCountry=de&SearchText=bme280&CatId=523)
 * LoRA Node (nur eine nötig)
- * The Things UNO - [Bestellen](https://shop.thethingsnetwork.com/index.php/product/the-things-uno/)
+ * ~The Things UNO - [Bestellen](https://shop.thethingsnetwork.com/index.php/product/the-things-uno/)~ wird offenbar nicht mehr vertrieben
  * Adafruit Feather - [Bestellen](http://www.exp-tech.de/adafruit-feather-m0-with-rfm95-lora-radio-900mhz) (nicht wundern, 900Mhz ist korrekt)
+ * Oder ein passendes anderes Board, z.B. nach „ESP32 LoRa“ suchen
 * Micro USB Flachband Kabel, 2m - [Bestellen](https://www.amazon.de/s/?field-keywords=micro+usb+flachbandkabel+2m)
 * Kabel (Dupont)
 * Kabelbinder
